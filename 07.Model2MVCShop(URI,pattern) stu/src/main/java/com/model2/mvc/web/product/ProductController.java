@@ -1,6 +1,8 @@
 package com.model2.mvc.web.product;
 
+import java.io.File;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -11,10 +13,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.model2.mvc.common.Page;
 import com.model2.mvc.common.Search;
@@ -39,21 +41,48 @@ public class ProductController {
 	@Value("#{commonProperties['pageSize']}")
 	int pageSize;
 	
+	
+	
 	//@RequestMapping("/addProductView.do")
 	@RequestMapping(value="addProduct", method=RequestMethod.GET)
-	public String addProduct() throws Exception {
+	public String addProduct(@ModelAttribute("product") Product product,Model model) throws Exception {
 		
 		System.out.println("/product/addProduct : GET");
+		
+		model.addAttribute("prod", product);
 		
 		return "redirect:/product/addProductView.jsp";
 	}
 	
 	//@RequestMapping("/addProduct.do")
-	@RequestMapping(value="addProduct")
-	@PostMapping
-	public String addProduct(@ModelAttribute("product") Product product, Model model) throws Exception {
+	@RequestMapping("addProduct")
+	public String addProduct(HttpServletRequest request,@ModelAttribute("product") Product product, Model model,@RequestParam("file") MultipartFile file) throws Exception {
 		
 		System.out.println("/addProduct.do");
+		String path = "C:\\Users\\bitcamp\\git\\07miniproject\\07.Model2MVCShop(URI,pattern) stu\\src\\main\\webapp\\images\\";
+		product.setManuDate(product.getManuDate().replaceAll("-", ""));
+		
+		String root = path + "NewUploadFiles";
+		
+		
+		File file2 = new File(root);
+		
+		if(!file2.exists()) file2.mkdirs();
+		
+		String ogFileName = file.getOriginalFilename();
+		String ext = ogFileName.substring(ogFileName.lastIndexOf("."));
+		String ranFileName = UUID.randomUUID().toString() + ext;
+		File changeFile = new File(file2 + "\\" +ranFileName);
+		System.out.println("ogfileanem : "+ogFileName + "\n RandomFilename : "+ ranFileName+"\n ChangeFile name : "+changeFile);
+		
+		
+		if(file.isEmpty()) {
+			product.setFileName("");
+			
+		} else if(!file.isEmpty()){
+			product.setFileName(changeFile.getName());
+			file.transferTo(changeFile);
+		}
 		
 		productService.addProduct(product);
 		
@@ -117,11 +146,35 @@ public class ProductController {
 	
 	//@RequestMapping("/updateProduct.do")
 	@RequestMapping(value="updateProduct", method=RequestMethod.POST)
-	public String updateProduct(@ModelAttribute("product") Product product, Model model) throws Exception{
+	public String updateProduct(@ModelAttribute("product") Product product, Model model, @RequestParam("file") MultipartFile file) throws Exception{
+		
+		String path = "C:\\Users\\bitcamp\\git\\07miniproject\\07.Model2MVCShop(URI,pattern) stu\\src\\main\\webapp\\images\\";
+		product.setManuDate(product.getManuDate().replaceAll("-", ""));
+		String root = path + "NewUploadFiles";
+		
+		File file2 = new File(root);
+		if(!file2.exists()) file2.mkdirs();
+		
+		String ogFileName = file.getOriginalFilename();
+		String ext = ogFileName.substring(ogFileName.lastIndexOf("."));
+		String ranFileName = UUID.randomUUID().toString() + ext;
+		File changeFile = new File(file2 + "\\" +ranFileName);
+		System.out.println("ogfileanem : "+ogFileName + "\n RandomFilename : "+ ranFileName+"\n ChangeFile name : "+changeFile);
+		
+		
+		if(file.isEmpty()) {
+			product.setFileName("");
+			
+		} else if(!file.isEmpty()){
+			product.setFileName(changeFile.getName());
+			file.transferTo(changeFile);
+		}
 		
 		productService.updateProduct(product);
 		
-		return "redirect:/getProduct.do?prodNo="+product.getProdNo();
+		model.addAttribute("prod", product);
+		
+		return "redirect:/product/getProduct?prodNo="+product.getProdNo();
 	}
 	
 }
